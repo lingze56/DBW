@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>背单词小站（本地记录版）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      color: #222;
+      display: flex;
+      justify-content: center;
+      padding: 16px;
+    }
+    .app {
+      width: 100%;
+      max-width: 900px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      padding: 16px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      text-align: center;
+    }
+    .subtitle {
+      text-align: center;
+      color: #777;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .flex {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .column {
+      flex: 1 1 260px;
+      min-width: 0;
+    }
+    textarea {
+      width: 100%;
+      min-height: 200px;
+      resize: vertical;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 13px;
+      font-family: monospace;
+      outline: none;
+    }
+    textarea:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 1px rgba(79,70,229,0.15);
+    }
+    label {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 6px;
+      display: block;
+    }
+    button {
+      border: none;
+      border-radius: 999px;
+      background: #4f46e5;
+      color: #fff;
+      padding: 8px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.05s, box-shadow 0.15s;
+      box-shadow: 0 4px 10px rgba(79,70,229,0.25);
+      white-space: nowrap;
+    }
+    button:disabled {
+      background: #b4b3f5;
+      cursor: default;
+      box-shadow: none;
+    }
+    button:hover:not(:disabled) {
+      background: #4338ca;
+    }
+    button:active:not(:disabled) {
+      transform: translateY(1px);
+      box-shadow: 0 2px 5px rgba(79,70,229,0.35);
+    }
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+      box-shadow: none;
+    }
+    .btn-secondary:hover {
+      background: #d1d5db;
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .card {
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      padding: 12px;
+      background: #fafafa;
+      margin-top: 4px;
+    }
+    .word-display {
+      font-size: 24px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 10px;
+      word-wrap: break-word;
+    }
+    .meaning-input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+      outline: none;
+    }
+    .meaning-input:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 1px rgba(79,70,229,0.15);
+    }
+    .status {
+      margin-top: 8px;
+      font-size: 12px;
+      min-height: 18px;
+    }
+    .status span {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .status-correct {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .status-wrong {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    .small {
+      font-size: 11px;
+      color: #888;
+      margin-top: 4px;
+    }
+    .stats {
+      font-size: 12px;
+      color: #555;
+      margin-top: 6px;
+    }
+    .definition {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #374151;
+    }
+    .definition-title {
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+    @media (max-width: 640px) {
+      body {
+        padding: 8px;
+      }
+      .app {
+        padding: 12px;
+      }
+      .word-display {
+        font-size: 20px;
+      }
+      button {
+        flex: 1;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>背单词小站（本地记录版）</h1>
+  <div class="subtitle">每行「英文 空格 中文释义」→ 乱序测试 → 自动保存导入和学习记录</div>
+
+  <div class="flex">
+    <!-- 左侧：导入单词 -->
+    <div class="column">
+      <label for="wordList">单词列表（每行：英文 + 空格 + 中文释义）：</label>
+      <textarea id="wordList" placeholder="例如：&#10;abandon 放弃&#10;abstract 抽象的&#10;accurate 准确的"></textarea>
+      <div class="btn-row">
+        <button id="importBtn">导入 / 覆盖单词</button>
+        <button id="mergeBtn" class="btn-secondary">追加导入（不覆盖原有）</button>
+        <button id="clearBtn" class="btn-secondary">清空所有记录</button>
+      </div>
+      <div class="stats" id="statsInfo">当前单词数：0</div>
+      <div class="small">
+        示例行格式：<code>abandon 放弃</code>（英文和中文中间至少一个空格）。
+        刷新或重开浏览器后，单词和学习记录会自动从本地恢复。
+      </div>
+    </div>
+
+    <!-- 右侧：测试区域 -->
+    <div class="column">
+      <label>测试区：</label>
+      <div class="card">
+        <div class="word-display" id="currentWord">请先导入单词并开始测试</div>
+        <input
+          id="meaningInput"
+          type="text"
+          class="meaning-input"
+          placeholder="在这里输入该单词的中文释义，回车提交"
+          disabled
+        />
+        <div class="btn-row" style="margin-top: 8px;">
+          <button id="startBtn">开始测试</button>
+          <button id="skipBtn" class="btn-secondary" disabled>跳过</button>
+        </div>
+        <div class="status" id="statusBox"></div>
+        <div class="definition" id="definitionBox"></div>
+        <div class="stats" id="quizStats">答题统计：已答 0 道，正确 0 道</div>
+        <div class="stats" id="currentStats">当前单词：答过 0 次，正确 0 次，错误 0 次</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 本地存储 key
+  const STORAGE_KEY = "vocab_cards_with_progress_v1";
+
+  // 数据结构：cards 里保存所有单词及学习记录
+  let cards = []; // { word, cn, correct, wrong }
+  let queue = []; // 乱序队列，存 index
+  let currentIndex = null;
+  let answeredCount = 0;
+  let correctCount = 0;
+
+  const wordListEl = document.getElementById("wordList");
+  const importBtn = document.getElementById("importBtn");
+  const mergeBtn = document.getElementById("mergeBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const statsInfoEl = document.getElementById("statsInfo");
+
+  const currentWordEl = document.getElementById("currentWord");
+  const meaningInputEl = document.getElementById("meaningInput");
+  const statusBoxEl = document.getElementById("statusBox");
+  const definitionBoxEl = document.getElementById("definitionBox");
+  const quizStatsEl = document.getElementById("quizStats");
+  const currentStatsEl = document.getElementById("currentStats");
+  const startBtn = document.getElementById("startBtn");
+  const skipBtn = document.getElementById("skipBtn");
+
+  // 工具：保存 / 读取 localStorage
+  function saveToStorage() {
+    try {
+      const data = {
+        cards,
+        answeredCount,
+        correctCount
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.error("保存到本地失败", e);
+    }
+  }
+
+  function loadFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.cards)) {
+        cards = data.cards.map(c => ({
+          word: c.word,
+          cn: c.cn || "",
+          correct: c.correct || 0,
+          wrong: c.wrong || 0
+        }));
+        answeredCount = data.answeredCount || 0;
+        correctCount = data.correctCount || 0;
+        updateStatsInfo();
+        updateQuizStats();
+      }
+    } catch (e) {
+      console.error("读取本地记录失败", e);
+    }
+  }
+
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
+  function updateStatsInfo() {
+    const total = cards.length;
+    const totalCorrect = cards.reduce((sum, c) => sum + (c.correct || 0), 0);
+    const totalWrong = cards.reduce((sum, c) => sum + (c.wrong || 0), 0);
+    statsInfoEl.textContent = `当前单词数：${total}，总正确：${totalCorrect}，总错误：${totalWrong}`;
+  }
+
+  function updateQuizStats() {
+    quizStatsEl.textContent = `答题统计：已答 ${answeredCount} 道，正确 ${correctCount} 道`;
+  }
+
+  function updateCurrentStats() {
+    if (currentIndex === null || !cards[currentIndex]) {
+      currentStatsEl.textContent = "当前单词：答过 0 次，正确 0 次，错误 0 次";
+      return;
+    }
+    const c = cards[currentIndex];
+    const total = (c.correct || 0) + (c.wrong || 0);
+    currentStatsEl.textContent =
+      `当前单词：答过 ${total} 次，正确 ${c.correct || 0} 次，错误 ${c.wrong || 0} 次`;
+  }
+
+  function setStatus(type, text) {
+    if (!text) {
+      statusBoxEl.innerHTML = "";
+      return;
+    }
+    const cls = type === "correct" ? "status-correct" : "status-wrong";
+    statusBoxEl.innerHTML = `<span class="${cls}">${text}</span>`;
+  }
+
+  function renderDefinition(card) {
+    if (!card) {
+      definitionBoxEl.textContent = "";
+      return;
+    }
+    definitionBoxEl.innerHTML =
+      `<div class="definition-title">你的记忆释义：</div>${card.cn || "（未设置中文释义）"}`;
+  }
+
+  // 把 textarea 的文本解析成单词数组
+  function parseLinesToCards(lines) {
+    const result = [];
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const firstSpace = trimmed.indexOf(" ");
+      if (firstSpace === -1) {
+        // 没有空格，只有英文
+        result.push({
+          word: trimmed,
+          cn: "",
+          correct: 0,
+          wrong: 0
+        });
+      } else {
+        const word = trimmed.slice(0, firstSpace).trim();
+        const cn = trimmed.slice(firstSpace + 1).trim();
+        if (!word) continue;
+        result.push({
+          word,
+          cn,
+          correct: 0,
+          wrong: 0
+        });
+      }
+    }
+    return result;
+  }
+
+  // 导入（覆盖）
+  importBtn.addEventListener("click", () => {
+    const text = wordListEl.value.trim();
+    if (!text) {
+      alert("请先在左侧文本框中输入单词，每行：英文 + 空格 + 中文释义。");
+      return;
+    }
+    const lines = text.split(/\r?\n/);
+    const parsed = parseLinesToCards(lines);
+    if (!parsed.length) {
+      alert("未成功解析出任何单词，请检查格式。");
+      return;
+    }
+
+    if (cards.length > 0 && !confirm("这将覆盖之前的单词和学习记录，确定继续吗？")) {
+      return;
+    }
+
+    cards = parsed;
+    answeredCount = 0;
+    correctCount = 0;
+    currentIndex = null;
+    queue = [];
+    currentWordEl.textContent = "已导入单词，请点击「开始测试」。";
+    meaningInputEl.value = "";
+    meaningInputEl.disabled = true;
+    skipBtn.disabled = true;
+    setStatus(null, "");
+    definitionBoxEl.textContent = "";
+
+    updateStatsInfo();
+    updateQuizStats();
+    updateCurrentStats();
+    saveToStorage();
+    alert("导入完成（覆盖模式），可以开始测试。");
+  });
+
+  // 追加导入（不覆盖旧单词，旧单词保留学习记录）
+  mergeBtn.addEventListener("click", () => {
+    const text = wordListEl.value.trim();
+    if (!text) {
+      alert("请先在左侧文本框中输入要追加的单词（格式同上）。");
+      return;
+    }
+    const lines = text.split(/\r?\n/);
+    const parsed = parseLinesToCards(lines);
+    if (!parsed.length) {
+      alert("未成功解析出任何单词，请检查格式。");
+      return;
+    }
+
+    // 用 word 去重：已存在的单词，只更新中文释义，不重置学习次数
+    const map = new Map();
+    cards.forEach(c => map.set(c.word, c));
+
+    for (const p of parsed) {
+      if (map.has(p.word)) {
+        const old = map.get(p.word);
+        if (p.cn) old.cn = p.cn; // 更新释义
+      } else {
+        cards.push(p);
+        map.set(p.word, p);
+      }
+    }
+
+    updateStatsInfo();
+    saveToStorage();
+    alert("追加导入完成，旧学习记录已保留。");
+  });
+
+  // 清空所有记录
+  clearBtn.addEventListener("click", () => {
+    if (!confirm("确定要清空所有单词和学习记录吗？此操作不可恢复。")) return;
+    cards = [];
+    queue = [];
+    currentIndex = null;
+    answeredCount = 0;
+    correctCount = 0;
+    wordListEl.value = "";
+    currentWordEl.textContent = "请先导入单词并开始测试";
+    meaningInputEl.value = "";
+    meaningInputEl.disabled = true;
+    skipBtn.disabled = true;
+    setStatus(null, "");
+    definitionBoxEl.textContent = "";
+    updateStatsInfo();
+    updateQuizStats();
+    updateCurrentStats();
+    localStorage.removeItem(STORAGE_KEY);
+  });
+
+  function initQueue() {
+    queue = cards.map((_, idx) => idx);
+    shuffle(queue);
+  }
+
+  function nextCard() {
+    if (queue.length === 0) {
+      initQueue();
+    }
+    currentIndex = queue.shift();
+    const card = cards[currentIndex];
+    currentWordEl.textContent = card.word;
+    meaningInputEl.value = "";
+    meaningInputEl.focus();
+    setStatus(null, "");
+    definitionBoxEl.textContent = "";
+    updateCurrentStats();
+  }
+
+  startBtn.addEventListener("click", () => {
+    if (!cards.length) {
+      alert("请先在左侧导入单词。");
+      return;
+    }
+    initQueue();
+    // 不强制清零全局统计，让你可以“接着练”
+    meaningInputEl.disabled = false;
+    skipBtn.disabled = false;
+    nextCard();
+  });
+
+  skipBtn.addEventListener("click", () => {
+    if (currentIndex === null) return;
+    queue.push(currentIndex);
+    shuffle(queue);
+    nextCard();
+  });
+
+  function checkAnswer() {
+    if (currentIndex === null) return;
+    const userInput = meaningInputEl.value.trim();
+    const card = cards[currentIndex];
+
+    answeredCount++;
+    let isCorrect = false;
+
+    if (card.cn) {
+      const target = card.cn.toLowerCase();
+      if (target && userInput && target.includes(userInput.toLowerCase())) {
+        isCorrect = true;
+      }
+    } else {
+      isCorrect = false;
+    }
+
+    if (isCorrect) {
+      card.correct = (card.correct || 0) + 1;
+      correctCount++;
+      setStatus("correct", "回答正确，太棒了！");
+      saveToStorage();
+      setTimeout(() => {
+        nextCard();
+        updateQuizStats();
+      }, 700);
+    } else {
+      card.wrong = (card.wrong || 0) + 1;
+      setStatus("wrong", "回答不正确，注意记忆呀！");
+      renderDefinition(card);
+      queue.push(currentIndex);  // 错题多练
+      shuffle(queue);
+      saveToStorage();
+      updateQuizStats();
+      updateCurrentStats();
+    }
+  }
+
+  meaningInputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      checkAnswer();
+    }
+  });
+
+  // 页面加载时，尝试从本地恢复记录
+  window.addEventListener("load", () => {
+    loadFromStorage();
+    if (cards.length) {
+      currentWordEl.textContent = "已从本地恢复单词和学习记录，可直接开始测试。";
+      updateCurrentStats();
+    }
+  });
+</script>
+</body>
+</html>

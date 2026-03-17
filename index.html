@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>背答案小站 — 本地记录（移动优先）</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <meta name="description" content="移动友好的本地单词/答案背诵器，支持显示英文背中文或显示中文背英文，自动保存记录与导出。" />
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <h1>背答案小站</h1>
+      <div class="sub">移动友好 | 本地保存 | 支持 双向 背题</div>
+    </header>
+
+    <section class="panel import-panel">
+      <label for="wordList">单词/题目（每行：英文 空格 中文释义；也可只写一方）：</label>
+      <textarea id="wordList" placeholder="例如：&#10;abandon 放弃&#10;abstract 抽象的 | 抽象的概念&#10;apple 苹果"></textarea>
+
+      <div class="row">
+        <button id="importBtn">导入 / 覆盖</button>
+        <button id="mergeBtn" class="secondary">追加导入</button>
+        <button id="clearBtn" class="secondary">清空全部</button>
+      </div>
+
+      <div class="row small-row">
+        <button id="exportJson" class="secondary">下载 JSON 备份</button>
+        <label class="file-btn">
+          <input type="file" id="importJsonFile" accept="application/json" />
+          从 JSON 导入
+        </label>
+      </div>
+
+      <div id="statsInfo" class="stats">当前单词数：0</div>
+      <div class="hint">每行格式：<code>english 中文释义</code>。若有多个正确答案用 <code>|</code> 或 <code>;</code> 分隔。刷新后记录自动恢复。</div>
+    </section>
+
+    <section class="panel quiz-panel">
+      <div class="mode-row">
+        <div class="mode-toggle">
+          <button id="modeEnToCn" class="mode active">显示英文 → 输入中文</button>
+          <button id="modeCnToEn" class="mode">显示中文 → 输入英文</button>
+        </div>
+        <div class="controls">
+          <button id="startBtn">开始</button>
+          <button id="skipBtn" class="secondary" disabled>跳过</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="currentPrompt" class="prompt">请先导入单词并开始测试</div>
+        <input id="answerInput" class="answer" placeholder="在此输入答案，回车提交" disabled />
+        <div id="statusBox" class="status"></div>
+        <div id="definitionBox" class="definition"></div>
+        <div class="row stats-rows">
+          <div id="quizStats">答题统计：已答 0，正确 0</div>
+          <div id="currentStats">当前题：答过 0，正确 0，错误 0</div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <small>提示：可在导入区输入中文题目并切换到“显示中文 → 输入英文”来做反向背题。</small>
+    </footer>
+  </div>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
